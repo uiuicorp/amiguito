@@ -16,7 +16,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
       authorization: {
         params: {
-          redirect_uri: "http://localhost:3000/api/auth/callback/google",
+          redirect_uri: `${process.env.APP_URL}/api/auth/callback/google`,
         },
       },
     }),
