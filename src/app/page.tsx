@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function Home() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function Home() {
         <div>amiguito </div>
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded"
-          onClick={() => router.push("/home")}
+          onClick={() => signIn("google", { callbackUrl: "/home" })}
         >
           Login
         </button>

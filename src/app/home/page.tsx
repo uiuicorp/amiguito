@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function Home() {
   const router = useRouter();
+  const { data: session } = useSession();
 
   const handleCreateClick = () => {
     router.push("/create");
@@ -11,7 +13,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <h1 className="text-2xl font-bold mb-8">Amigo Secreto</h1>
+      <h1 className="text-2xl font-bold mb-8">
+        Amigo Secreto {session ? `- Bem-vindo, ${session.user?.name}` : ""}
+      </h1>
       <button
         className="p-2 bg-green-500 text-white rounded mb-8"
         onClick={handleCreateClick}
