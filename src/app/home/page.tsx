@@ -6,23 +6,43 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSession() as {
+    data: {
+      user: {
+        id: string;
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+      };
+    } | null;
+    status: string;
+  };
   interface Event {
     _id: string;
     eventName: string;
+    participants: { name: string; userId: string }[];
   }
 
-  const [events, setEvents] = useState<Event[]>([]);
+  const [participatingEvents, setParticipatingEvents] = useState<Event[]>([]);
 
   useEffect(() => {
     const fetchEvents = async () => {
-      const response = await fetch("/api/events");
-      const data = await response.json();
-      setEvents(data);
+      if (session) {
+        const response = await fetch(
+          `/api/events/participant?userId=${session.user?.id}`
+        );
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setParticipatingEvents(data);
+        } else {
+          console.error("Unexpected response format:", data);
+          setParticipatingEvents([]);
+        }
+      }
     };
 
     fetchEvents();
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -48,7 +68,7 @@ export default function Home() {
       <div className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Participando</h2>
         <ul className="list-disc pl-5">
-          {events.map((event) => (
+          {participatingEvents.map((event) => (
             <li key={event._id}>{event.eventName}</li>
           ))}
         </ul>

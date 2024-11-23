@@ -34,3 +34,62 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export async function POST(req: NextRequest) {
+  const url = new URL(req.url);
+  const id = url.pathname.split("/").pop();
+  const { participant, userId } = await req.json();
+
+  console.log(
+    "Received POST request to join event ID:",
+    id,
+    "with participant:",
+    participant,
+    "and user ID:",
+    userId
+  );
+
+  if (!id || !participant || !userId) {
+    console.error(
+      "Invalid Event ID, participant, or user ID:",
+      id,
+      participant,
+      userId
+    );
+    return NextResponse.json(
+      { error: "Invalid Event ID, participant, or user ID" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const { db } = await connectToDatabase();
+    console.log("Connected to database");
+
+    const result = await db.collection("events").updateOne(
+      // @ts-expect-error: MongoDB expects ObjectId, but we are using string for simplicity
+      { _id: id },
+      { $addToSet: { participants: { name: participant, userId: userId } } }
+    );
+
+    if (result.modifiedCount === 0) {
+      console.error("Failed to add participant to event ID:", id);
+      return NextResponse.json(
+        { error: "Failed to add participant" },
+        { status: 500 }
+      );
+    }
+
+    // @ts-expect-error: MongoDB expects ObjectId, but we are using string for simplicity
+    const updatedEvent = await db.collection("events").findOne({ _id: id });
+
+    console.log("Participant added successfully to event ID:", id);
+    return NextResponse.json(updatedEvent, { status: 200 });
+  } catch (error) {
+    console.error("Error adding participant to event ID:", id, error);
+    return NextResponse.json(
+      { error: "Failed to add participant" },
+      { status: 500 }
+    );
+  }
+}

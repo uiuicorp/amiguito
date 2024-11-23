@@ -3,14 +3,27 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useSession } from "next-auth/react";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
 
 export default function SecretFriend() {
   const { id } = useParams() as { id: string };
   const [event, setEvent] = useState<{
     eventName: string;
     eventDate: string;
-    participants: string[];
+    participants: { name: string; userId: string }[];
   } | null>(null);
+  const { data: session } = useSession();
 
   useEffect(() => {
     console.log("useEffect triggered with ID:", id);
@@ -33,6 +46,45 @@ export default function SecretFriend() {
     fetchEvent();
   }, [id]);
 
+  const handleJoinClick = async () => {
+    if (!session) {
+      console.error("No active session found.");
+      return;
+    }
+
+    console.log(
+      "Joining event with ID:",
+      id,
+      "as participant:",
+      session.user?.name,
+      "with user ID:",
+      session.user?.id
+    );
+
+    try {
+      const response = await fetch(`/api/events/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          participant: session.user?.name,
+          userId: session.user?.id,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedEvent = await response.json();
+        console.log("Successfully joined event:", updatedEvent);
+        setEvent(updatedEvent);
+      } else {
+        console.error("Failed to join event:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error joining event:", error);
+    }
+  };
+
   if (!event) {
     return <LoadingSpinner />;
   }
@@ -46,10 +98,13 @@ export default function SecretFriend() {
         <div className="p-4 border rounded">Event Name: {event.eventName}</div>
         <div className="p-4 border rounded">Event Date: {event.eventDate}</div>
         <div className="p-4 border rounded">
-          Participants: {event.participants.join(", ")}
+          Participants: {event.participants.map((p) => p.name).join(", ")}
         </div>
       </div>
-      <button className="mt-8 px-4 py-2 bg-blue-500 text-white rounded">
+      <button
+        className="mt-8 px-4 py-2 bg-blue-500 text-white rounded"
+        onClick={handleJoinClick}
+      >
         Join Secret Friend
       </button>
     </div>
