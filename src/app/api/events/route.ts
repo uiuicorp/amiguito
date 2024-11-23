@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "../../../utils/mongodb";
 
 export async function POST(req: NextRequest) {
-  const { eventName, eventDate } = await req.json();
+  const { eventName, eventDate, ownerId, participant } = await req.json();
 
-  if (!eventName || !eventDate) {
+  if (!eventName || !eventDate || !ownerId || !participant) {
     return NextResponse.json(
-      { error: "Event name and date are required" },
+      { error: "Event name, date, owner ID, and participant are required" },
       { status: 400 }
     );
   }
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       _id: eventName,
       eventName,
       eventDate,
-      participants: [],
+      participants: [{ name: participant, userId: ownerId, isOwner: true }],
     });
     return NextResponse.json({ _id: result.insertedId }, { status: 201 });
   } catch {

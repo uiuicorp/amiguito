@@ -19,7 +19,12 @@ export default function CreateSecretFriend() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ eventName, eventDate }),
+        body: JSON.stringify({
+          eventName,
+          eventDate,
+          ownerId: session?.user?.id,
+          participant: session?.user?.name,
+        }),
       });
 
       if (response.ok) {

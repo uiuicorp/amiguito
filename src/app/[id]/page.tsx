@@ -21,7 +21,7 @@ export default function SecretFriend() {
   const [event, setEvent] = useState<{
     eventName: string;
     eventDate: string;
-    participants: { name: string; userId: string }[];
+    participants: { name: string; userId: string; isOwner: boolean }[];
   } | null>(null);
   const { data: session } = useSession();
 
@@ -45,6 +45,10 @@ export default function SecretFriend() {
 
     fetchEvent();
   }, [id]);
+
+  const isUserParticipant = event?.participants.some(
+    (participant) => participant.userId === session?.user?.id
+  );
 
   const handleJoinClick = async () => {
     if (!session) {
@@ -101,7 +105,9 @@ export default function SecretFriend() {
           Participants:
           <ul>
             {event.participants.map((p) => (
-              <li key={p.userId}>{p.name}</li>
+              <li key={p.userId}>
+                {p.name} {p.isOwner && <span>👑</span>}
+              </li>
             ))}
           </ul>
         </div>
@@ -109,6 +115,7 @@ export default function SecretFriend() {
       <button
         className="mt-8 px-4 py-2 bg-blue-500 text-white rounded"
         onClick={handleJoinClick}
+        hidden={isUserParticipant}
       >
         Join Secret Friend
       </button>
