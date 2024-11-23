@@ -9,14 +9,14 @@ interface SessionWithId extends Session {
   } & Session["user"];
 }
 
-export default NextAuth({
+const handler = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
       authorization: {
         params: {
-          redirect_uri: `${process.env.APP_URL}/api/auth/callback/google`,
+          redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/google`,
         },
       },
     }),
@@ -33,3 +33,5 @@ export default NextAuth({
     },
   },
 });
+
+export { handler as GET, handler as POST };
