@@ -26,24 +26,23 @@ export default function SecretFriend() {
   } | null>(null);
   const { data: session } = useSession();
 
-  useEffect(() => {
-    console.log("useEffect triggered with ID:", id);
-    const fetchEvent = async () => {
-      console.log("Fetching event with ID:", id);
-      try {
-        const response = await fetch(`/api/events/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Event data received:", data);
-          setEvent(data);
-        } else {
-          console.error("Failed to fetch event:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching event:", error);
+  const fetchEvent = async () => {
+    console.log("Fetching event with ID:", id);
+    try {
+      const response = await fetch(`/api/events/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Event data received:", data);
+        setEvent(data);
+      } else {
+        console.error("Failed to fetch event:", response.statusText);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching event:", error);
+    }
+  };
 
+  useEffect(() => {
     fetchEvent();
   }, [id]);
 
@@ -90,6 +89,8 @@ export default function SecretFriend() {
       }
     } catch (error) {
       console.error("Error joining event:", error);
+    } finally {
+      fetchEvent();
     }
   };
 
@@ -121,6 +122,8 @@ export default function SecretFriend() {
       }
     } catch (error) {
       console.error("Error removing participant:", error);
+    } finally {
+      fetchEvent();
     }
   };
 
@@ -139,27 +142,32 @@ export default function SecretFriend() {
         <div className="p-4 border rounded">
           Participants:
           <ul>
-            {event.participants.map((p) => (
-              <li key={p.userId} className="flex items-center justify-between">
-                <span>{p.name}</span>
-                <div className="flex items-center">
-                  {p.isOwner && <FaCrown className="mr-2" />}
-                  {!p.isOwner &&
-                  (session?.user?.id === p.userId ||
-                    session?.user?.id ===
-                      event.participants.find(
-                        (participant) => participant.isOwner
-                      )?.userId) ? (
-                    <button
-                      className="ml-4 text-red-500"
-                      onClick={() => handleRemoveClick(p.userId)}
-                    >
-                      <FaTrash />
-                    </button>
-                  ) : null}
-                </div>
-              </li>
-            ))}
+            {event.participants
+              ?.filter((p) => p !== null)
+              .map((p) => (
+                <li
+                  key={p.userId}
+                  className="flex items-center justify-between"
+                >
+                  <span>{p.name}</span>
+                  <div className="flex items-center">
+                    {p.isOwner && <FaCrown className="mr-2" />}
+                    {!p.isOwner &&
+                    (session?.user?.id === p.userId ||
+                      session?.user?.id ===
+                        event.participants.find(
+                          (participant) => participant.isOwner
+                        )?.userId) ? (
+                      <button
+                        className="ml-4 text-red-500"
+                        onClick={() => handleRemoveClick(p.userId)}
+                      >
+                        <FaTrash />
+                      </button>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
           </ul>
         </div>
       </div>
