@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useSession } from "next-auth/react";
+import { FaTrash, FaCrown } from "react-icons/fa";
 
 declare module "next-auth" {
   interface Session {
@@ -46,9 +47,12 @@ export default function SecretFriend() {
     fetchEvent();
   }, [id]);
 
-  const isUserParticipant = event?.participants.some(
-    (participant) => participant.userId === session?.user?.id
-  );
+  const isUserParticipant =
+    event &&
+    event.participants &&
+    event.participants.some(
+      (participant) => participant.userId === session?.user?.id
+    );
 
   const handleJoinClick = async () => {
     if (!session) {
@@ -89,6 +93,37 @@ export default function SecretFriend() {
     }
   };
 
+  const handleRemoveClick = async (userId: string) => {
+    if (!session) {
+      console.error("No active session found.");
+      return;
+    }
+
+    console.log("Removing participant with user ID:", userId);
+
+    try {
+      const response = await fetch(`/api/events/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedEvent = await response.json();
+        console.log("Successfully removed participant:", updatedEvent);
+        setEvent(updatedEvent);
+      } else {
+        console.error("Failed to remove participant:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error removing participant:", error);
+    }
+  };
+
   if (!event) {
     return <LoadingSpinner />;
   }
@@ -105,8 +140,24 @@ export default function SecretFriend() {
           Participants:
           <ul>
             {event.participants.map((p) => (
-              <li key={p.userId}>
-                {p.name} {p.isOwner && <span>👑</span>}
+              <li key={p.userId} className="flex items-center justify-between">
+                <span>{p.name}</span>
+                <div className="flex items-center">
+                  {p.isOwner && <FaCrown className="mr-2" />}
+                  {!p.isOwner &&
+                  (session?.user?.id === p.userId ||
+                    session?.user?.id ===
+                      event.participants.find(
+                        (participant) => participant.isOwner
+                      )?.userId) ? (
+                    <button
+                      className="ml-4 text-red-500"
+                      onClick={() => handleRemoveClick(p.userId)}
+                    >
+                      <FaTrash />
+                    </button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
@@ -115,7 +166,7 @@ export default function SecretFriend() {
       <button
         className="mt-8 px-4 py-2 bg-blue-500 text-white rounded"
         onClick={handleJoinClick}
-        hidden={isUserParticipant}
+        hidden={!!isUserParticipant}
       >
         Join Secret Friend
       </button>
