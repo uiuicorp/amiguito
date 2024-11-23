@@ -2,18 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
+import { useEffect } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function Home() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
+  useEffect(() => {
+    if (session) {
+      router.push("/home");
+    }
+  }, [session, router]);
+
   if (status === "loading") {
     return <LoadingSpinner />;
   }
 
   if (session) {
-    router.push("/home");
     return null;
   }
 
