@@ -65,11 +65,18 @@ export default function Home() {
       >
         Criar Amigo Secreto
       </button>
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">Participando</h2>
-        <ul className="list-disc pl-5">
+      <div className="flex flex-col gap-4 w-full max-w-md">
+        <h2 className="text-xl font-semibold mb-4">Participando</h2>
+        <ul className="list-none p-0">
           {participatingEvents.map((event) => (
-            <li key={event._id}>{event.eventName}</li>
+            <li key={event._id} className="mb-2">
+              <a
+                href={`/${event._id}`}
+                className="block p-4 border border-gray-300 rounded hover:bg-gray-500"
+              >
+                {event.eventName}
+              </a>
+            </li>
           ))}
         </ul>
       </div>

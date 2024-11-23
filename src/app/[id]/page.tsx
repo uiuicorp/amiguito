@@ -98,7 +98,12 @@ export default function SecretFriend() {
         <div className="p-4 border rounded">Event Name: {event.eventName}</div>
         <div className="p-4 border rounded">Event Date: {event.eventDate}</div>
         <div className="p-4 border rounded">
-          Participants: {event.participants.map((p) => p.name).join(", ")}
+          Participants:
+          <ul>
+            {event.participants.map((p) => (
+              <li key={p.userId}>{p.name}</li>
+            ))}
+          </ul>
         </div>
       </div>
       <button
