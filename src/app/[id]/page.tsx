@@ -44,7 +44,7 @@ export default function SecretFriend() {
 
   useEffect(() => {
     fetchEvent();
-  }, [id, fetchEvent]);
+  }, [id]);
 
   const isUserParticipant =
     event &&
