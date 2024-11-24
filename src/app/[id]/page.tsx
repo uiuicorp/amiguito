@@ -152,7 +152,7 @@ export default function SecretFriend() {
       if (response.ok) {
         console.log("Successfully deleted event");
         setEvent(null);
-        router.push("/home"); // Redirect to /home page
+        router.push("/home");
       } else {
         const errorText = await response.text();
         console.error(
@@ -200,6 +200,7 @@ export default function SecretFriend() {
                       <button
                         className="ml-4 text-red-500"
                         onClick={() => handleRemoveClick(p.userId)}
+                        aria-label="remove participant"
                       >
                         <FaTrash />
                       </button>
