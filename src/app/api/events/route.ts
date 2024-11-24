@@ -50,16 +50,21 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const { eventName, userId } = await req.json();
-
-  if (!eventName || !userId) {
-    return NextResponse.json(
-      { error: "Event name and user ID are required" },
-      { status: 400 }
-    );
-  }
-
   try {
+    const { eventName, userId, deleteEvent } = await req.json();
+
+    if (!eventName || !userId || typeof deleteEvent !== "boolean") {
+      console.error("Invalid request payload:", {
+        eventName,
+        userId,
+        deleteEvent,
+      });
+      return NextResponse.json(
+        { error: "Event name, user ID, and deleteEvent flag are required" },
+        { status: 400 }
+      );
+    }
+
     const { db } = await connectToDatabase();
     const event = await db.collection("events").findOne({ _id: eventName });
 
@@ -70,16 +75,21 @@ export async function DELETE(req: NextRequest) {
     const isOwner: boolean = event.participants.some(
       (p: Participant) => p.userId === userId && p.isOwner
     );
+
+    if (deleteEvent) {
+      if (!isOwner) {
+        return NextResponse.json(
+          { error: "Only the owner can delete the event" },
+          { status: 403 }
+        );
+      }
+      await db.collection("events").deleteOne({ _id: eventName });
+      return NextResponse.json({ message: "Event deleted" }, { status: 200 });
+    }
+
     const remainingParticipants = event.participants.filter(
       (p: Participant) => p.userId !== userId
     );
-
-    if (isOwner && remainingParticipants.length === 0) {
-      return NextResponse.json(
-        { error: "Owner cannot be removed if there are other participants" },
-        { status: 400 }
-      );
-    }
 
     const updatedEvent = await db
       .collection("events")
@@ -89,7 +99,8 @@ export async function DELETE(req: NextRequest) {
       );
 
     return NextResponse.json(updatedEvent, { status: 200 });
-  } catch {
+  } catch (error) {
+    console.error("Error processing DELETE request:", error);
     return NextResponse.json(
       { error: "Failed to remove participant" },
       { status: 500 }

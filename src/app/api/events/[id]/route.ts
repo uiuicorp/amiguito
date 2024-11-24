@@ -132,25 +132,26 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    const isOwner: boolean = event.participants.some(
-      (p: Participant) => p.userId === userId && p.isOwner
-    );
     const remainingParticipants = event.participants.filter(
       (p: Participant) => p.userId !== userId
     );
 
-    if (isOwner && remainingParticipants.length === 0) {
-      return NextResponse.json(
-        { error: "Owner cannot be removed if there are other participants" },
-        { status: 400 }
-      );
-    }
-
-    const updatedEvent = await db.collection("events").updateOne(
+    const result = await db.collection("events").updateOne(
       // @ts-expect-error: MongoDB expects ObjectId, but we are using string for simplicity
       { _id: id },
       { $set: { participants: remainingParticipants } }
     );
+
+    if (result.modifiedCount === 0) {
+      console.error("Failed to remove participant from event ID:", id);
+      return NextResponse.json(
+        { error: "Failed to remove participant" },
+        { status: 500 }
+      );
+    }
+
+    // @ts-expect-error: MongoDB expects ObjectId, but we are using string for simplicity
+    const updatedEvent = await db.collection("events").findOne({ _id: id });
 
     console.log("Participant removed successfully from event ID:", id);
     return NextResponse.json(updatedEvent, { status: 200 });

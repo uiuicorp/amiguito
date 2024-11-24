@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useSession } from "next-auth/react";
 import { FaTrash, FaCrown } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 declare module "next-auth" {
   interface Session {
@@ -25,6 +26,7 @@ export default function SecretFriend() {
     participants: { name: string; userId: string; isOwner: boolean }[];
   } | null>(null);
   const { data: session } = useSession();
+  const router = useRouter();
 
   const fetchEvent = async () => {
     console.log("Fetching event with ID:", id);
@@ -127,6 +129,43 @@ export default function SecretFriend() {
     }
   };
 
+  const handleDeleteEventClick = async () => {
+    if (!session) {
+      console.error("No active session found.");
+      return;
+    }
+
+    console.log("Deleting event with ID:", id);
+
+    try {
+      const response = await fetch(`/api/events/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: session.user?.id,
+          deleteEvent: true,
+        }),
+      });
+
+      if (response.ok) {
+        console.log("Successfully deleted event");
+        setEvent(null);
+        router.push("/home"); // Redirect to /home page
+      } else {
+        const errorText = await response.text();
+        console.error(
+          "Failed to delete event:",
+          response.statusText,
+          errorText
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
+  };
+
   if (!event) {
     return <LoadingSpinner />;
   }
@@ -178,6 +217,16 @@ export default function SecretFriend() {
       >
         Join Secret Friend
       </button>
+      {event.participants.find(
+        (p) => p.userId === session?.user?.id && p.isOwner
+      ) && (
+        <button
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
+          onClick={handleDeleteEventClick}
+        >
+          Excluir Amigo Secreto
+        </button>
+      )}
     </div>
   );
 }
