@@ -6,6 +6,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useSession } from "next-auth/react";
 import { FaTrash, FaCrown } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import styles from "./SecretFriend.module.css";
 
 declare module "next-auth" {
   interface Session {
@@ -30,6 +31,7 @@ export default function SecretFriend() {
   } | null>(null);
   const { data: session } = useSession();
   const router = useRouter();
+  const [isRevealed, setIsRevealed] = useState(false);
 
   const fetchEvent = async () => {
     try {
@@ -193,6 +195,10 @@ export default function SecretFriend() {
     }
   };
 
+  const handleRevealClick = () => {
+    setIsRevealed((prev) => !prev);
+  };
+
   if (!event) {
     return <LoadingSpinner />;
   }
@@ -266,14 +272,28 @@ export default function SecretFriend() {
       {drawResult && session?.user?.id && event?.participants && (
         <div className="mt-8 p-4 border rounded">
           <h2 className="text-xl font-bold">Seu amigo secreto é:</h2>
-          <p>
-            {
-              event.participants.find(
-                (participant) =>
-                  participant.userId === drawResult[session.user.id]
-              )?.name
-            }
-          </p>
+          <div
+            className={`${styles.relative} w-64 h-32 mt-4 ${
+              isRevealed ? "" : styles.flipped
+            }`}
+            onClick={handleRevealClick}
+          >
+            <div className={`${styles.inner}`}>
+              <div className={`${styles.front} ${styles["backface-hidden"]}`}>
+                <p className="text-gray-700">Click to reveal</p>
+              </div>
+              <div className={`${styles.back} ${styles["backface-hidden"]}`}>
+                <p className="text-gray-700">
+                  {
+                    event.participants.find(
+                      (participant) =>
+                        participant.userId === drawResult[session.user.id]
+                    )?.name
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
