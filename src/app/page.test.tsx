@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import Home from "./page";
-import LoadingSpinner from "../components/LoadingSpinner";
 
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),

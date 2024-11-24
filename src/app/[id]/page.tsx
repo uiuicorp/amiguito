@@ -29,12 +29,10 @@ export default function SecretFriend() {
   const router = useRouter();
 
   const fetchEvent = async () => {
-    console.log("Fetching event with ID:", id);
     try {
       const response = await fetch(`/api/events/${id}`);
       if (response.ok) {
         const data = await response.json();
-        console.log("Event data received:", data);
         setEvent(data);
       } else {
         console.error("Failed to fetch event:", response.statusText);
@@ -46,7 +44,7 @@ export default function SecretFriend() {
 
   useEffect(() => {
     fetchEvent();
-  }, [id]);
+  }, [id, fetchEvent]);
 
   const isUserParticipant =
     event &&
@@ -60,15 +58,6 @@ export default function SecretFriend() {
       console.error("No active session found.");
       return;
     }
-
-    console.log(
-      "Joining event with ID:",
-      id,
-      "as participant:",
-      session.user?.name,
-      "with user ID:",
-      session.user?.id
-    );
 
     try {
       const response = await fetch(`/api/events/${id}`, {
@@ -84,7 +73,6 @@ export default function SecretFriend() {
 
       if (response.ok) {
         const updatedEvent = await response.json();
-        console.log("Successfully joined event:", updatedEvent);
         setEvent(updatedEvent);
       } else {
         console.error("Failed to join event:", response.statusText);
@@ -102,8 +90,6 @@ export default function SecretFriend() {
       return;
     }
 
-    console.log("Removing participant with user ID:", userId);
-
     try {
       const response = await fetch(`/api/events/${id}`, {
         method: "DELETE",
@@ -117,7 +103,6 @@ export default function SecretFriend() {
 
       if (response.ok) {
         const updatedEvent = await response.json();
-        console.log("Successfully removed participant:", updatedEvent);
         setEvent(updatedEvent);
       } else {
         console.error("Failed to remove participant:", response.statusText);
@@ -135,8 +120,6 @@ export default function SecretFriend() {
       return;
     }
 
-    console.log("Deleting event with ID:", id);
-
     try {
       const response = await fetch(`/api/events/${id}`, {
         method: "DELETE",
@@ -150,7 +133,6 @@ export default function SecretFriend() {
       });
 
       if (response.ok) {
-        console.log("Successfully deleted event");
         setEvent(null);
         router.push("/home");
       } else {
@@ -194,7 +176,7 @@ export default function SecretFriend() {
                     {!p.isOwner &&
                     (session?.user?.id === p.userId ||
                       session?.user?.id ===
-                        event.participants.find(
+                        event.participants?.find(
                           (participant) => participant.isOwner
                         )?.userId) ? (
                       <button
@@ -218,7 +200,7 @@ export default function SecretFriend() {
       >
         Join Secret Friend
       </button>
-      {event.participants.find(
+      {event.participants?.find(
         (p) => p.userId === session?.user?.id && p.isOwner
       ) && (
         <button

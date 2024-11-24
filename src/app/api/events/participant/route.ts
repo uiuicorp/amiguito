@@ -12,14 +12,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const { db } = await connectToDatabase();
-    console.log("Connected to database");
 
     const events = await db
       .collection("events")
       .find({ "participants.userId": userId })
       .toArray();
 
-    console.log("Events found for user ID:", userId, events);
     return NextResponse.json(events, { status: 200 });
   } catch (error) {
     console.error("Error fetching events for user ID:", userId, error);
