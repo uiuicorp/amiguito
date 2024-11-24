@@ -3,35 +3,150 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useSession } from "next-auth/react";
+import { FaTrash, FaCrown } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
 
 export default function SecretFriend() {
   const { id } = useParams() as { id: string };
   const [event, setEvent] = useState<{
     eventName: string;
     eventDate: string;
-    participants: string[];
+    participants: { name: string; userId: string; isOwner: boolean }[];
   } | null>(null);
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const fetchEvent = async () => {
+    try {
+      const response = await fetch(`/api/events/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setEvent(data);
+      } else {
+        console.error("Failed to fetch event:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching event:", error);
+    }
+  };
 
   useEffect(() => {
-    console.log("useEffect triggered with ID:", id);
-    const fetchEvent = async () => {
-      console.log("Fetching event with ID:", id);
-      try {
-        const response = await fetch(`/api/events/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Event data received:", data);
-          setEvent(data);
-        } else {
-          console.error("Failed to fetch event:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching event:", error);
-      }
-    };
-
     fetchEvent();
-  }, [id]);
+  }, [id, fetchEvent]);
+
+  const isUserParticipant =
+    event &&
+    event.participants &&
+    event.participants.some(
+      (participant) => participant.userId === session?.user?.id
+    );
+
+  const handleJoinClick = async () => {
+    if (!session) {
+      console.error("No active session found.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/events/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          participant: session.user?.name,
+          userId: session.user?.id,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedEvent = await response.json();
+        setEvent(updatedEvent);
+      } else {
+        console.error("Failed to join event:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error joining event:", error);
+    } finally {
+      fetchEvent();
+    }
+  };
+
+  const handleRemoveClick = async (userId: string) => {
+    if (!session) {
+      console.error("No active session found.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/events/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedEvent = await response.json();
+        setEvent(updatedEvent);
+      } else {
+        console.error("Failed to remove participant:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error removing participant:", error);
+    } finally {
+      fetchEvent();
+    }
+  };
+
+  const handleDeleteEventClick = async () => {
+    if (!session) {
+      console.error("No active session found.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/events/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: session.user?.id,
+          deleteEvent: true,
+        }),
+      });
+
+      if (response.ok) {
+        setEvent(null);
+        router.push("/home");
+      } else {
+        const errorText = await response.text();
+        console.error(
+          "Failed to delete event:",
+          response.statusText,
+          errorText
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
+  };
 
   if (!event) {
     return <LoadingSpinner />;
@@ -46,12 +161,55 @@ export default function SecretFriend() {
         <div className="p-4 border rounded">Event Name: {event.eventName}</div>
         <div className="p-4 border rounded">Event Date: {event.eventDate}</div>
         <div className="p-4 border rounded">
-          Participants: {event.participants.join(", ")}
+          Participants:
+          <ul>
+            {event.participants
+              ?.filter((p) => p !== null)
+              .map((p) => (
+                <li
+                  key={p.userId}
+                  className="flex items-center justify-between"
+                >
+                  <span>{p.name}</span>
+                  <div className="flex items-center">
+                    {p.isOwner && <FaCrown className="mr-2" />}
+                    {!p.isOwner &&
+                    (session?.user?.id === p.userId ||
+                      session?.user?.id ===
+                        event.participants?.find(
+                          (participant) => participant.isOwner
+                        )?.userId) ? (
+                      <button
+                        className="ml-4 text-red-500"
+                        onClick={() => handleRemoveClick(p.userId)}
+                        aria-label="remove participant"
+                      >
+                        <FaTrash />
+                      </button>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+          </ul>
         </div>
       </div>
-      <button className="mt-8 px-4 py-2 bg-blue-500 text-white rounded">
+      <button
+        className="mt-8 px-4 py-2 bg-blue-500 text-white rounded"
+        onClick={handleJoinClick}
+        hidden={!!isUserParticipant}
+      >
         Join Secret Friend
       </button>
+      {event.participants?.find(
+        (p) => p.userId === session?.user?.id && p.isOwner
+      ) && (
+        <button
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
+          onClick={handleDeleteEventClick}
+        >
+          Excluir Amigo Secreto
+        </button>
+      )}
     </div>
   );
 }
