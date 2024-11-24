@@ -188,6 +188,8 @@ export default function SecretFriend() {
       }
     } catch (error) {
       console.error("Error performing draw:", error);
+    } finally {
+      fetchEvent();
     }
   };
 
@@ -263,7 +265,7 @@ export default function SecretFriend() {
       )}
       {drawResult && session?.user?.id && event?.participants && (
         <div className="mt-8 p-4 border rounded">
-          <h2 className="text-xl font-bold">You will gift:</h2>
+          <h2 className="text-xl font-bold">Seu amigo secreto é:</h2>
           <p>
             {
               event.participants.find(
